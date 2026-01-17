@@ -36,14 +36,14 @@ public class PassGen {
         wordSlider.setMajorTickSpacing(1);
         wordSlider.setPaintTicks(true);
         wordSlider.setPaintLabels(true);
-        wordSlider.addChangeListener(_ -> {
+        wordSlider.addChangeListener(e -> {
             currentWordCount = wordSlider.getValue();
             refreshList(listModel);
         });
 
         // Checkbox for numbers
         JCheckBox numBox = new JCheckBox("Append random number (0-9)");
-        numBox.addActionListener(_ -> {
+        numBox.addActionListener(e -> {
             includeNumber = numBox.isSelected();
             refreshList(listModel);
         });
@@ -89,7 +89,7 @@ public class PassGen {
 
     public static String generatePassword(int count) {
         String base = IntStream.range(0, count)
-                .mapToObj(_ -> cachedWords.get(RAND.nextInt(cachedWords.size())))
+                .mapToObj(i -> cachedWords.get(RAND.nextInt(cachedWords.size())))
                 .collect(Collectors.joining("-")); //.toLowerCase();
 
         return includeNumber ? base + "-" + (RAND.nextInt(10)) : base;
