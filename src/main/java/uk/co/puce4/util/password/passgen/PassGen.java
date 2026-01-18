@@ -12,26 +12,32 @@ public class PassGen {
     static List<String> cachedWords = null;
     private static final SecureRandom RAND = new SecureRandom();
     private static int currentWordCount = 3;
-    private static boolean includeNumber = false; // Checkbox state
+    private static boolean includeNumber = false;
 
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            loadDictionary();
-            showEnhancedGenerator();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
-        }
+        // Run UI on the Event Dispatch Thread (standard Swing practice)
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                loadDictionary();
+                createAndShowGUI();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    private static void showEnhancedGenerator() {
+    private static void createAndShowGUI() {
+        JFrame frame = new JFrame("Password Generator");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // 1. Setup the List and Model
         DefaultListModel<String> listModel = new DefaultListModel<>();
         refreshList(listModel);
-
         JList<String> passwordList = new JList<>(listModel);
         passwordList.setFont(new Font("Monospaced", Font.PLAIN, 14));
 
-        // Slider for word count
+        // 2. Initialise the Slider (The Control Components)
         JSlider wordSlider = new JSlider(2, 6, 3);
         wordSlider.setMajorTickSpacing(1);
         wordSlider.setPaintTicks(true);
@@ -41,14 +47,14 @@ public class PassGen {
             refreshList(listModel);
         });
 
-        // Checkbox for numbers
+        // 3. Initialise the Checkbox
         JCheckBox numBox = new JCheckBox("Append random number (0-9)");
         numBox.addActionListener(e -> {
             includeNumber = numBox.isSelected();
             refreshList(listModel);
         });
 
-        // Build the Control Panel
+        // 4. Build the controlPanel (This was missing in the snippet!)
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
         controlPanel.add(new JLabel("Number of Words:"));
@@ -56,30 +62,56 @@ public class PassGen {
         controlPanel.add(numBox);
         controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // 5. Buttons Panel (Standard GUI buttons)
+        JPanel buttonPanel = new JPanel();
+        JButton copyBtn = new JButton("Copy Selected");
+        JButton refreshBtn = new JButton("Refresh");
+
+        copyBtn.addActionListener(e -> {
+            if (passwordList.getSelectedValue() != null) {
+                copyToClipboard(passwordList.getSelectedValue());
+            }
+        });
+        refreshBtn.addActionListener(e -> refreshList(listModel));
+
+        buttonPanel.add(copyBtn);
+        buttonPanel.add(refreshBtn);
+
+        // 6. Create the Status Label
+        JLabel statusLabel = new JLabel(" "); // Space keeps the height consistent
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        statusLabel.setForeground(new Color(0, 128, 0)); // Dark green for success
+
+        // 7. Setup a Timer to clear the status after 2 seconds
+        Timer clearTimer = new Timer(2000, e -> statusLabel.setText(" "));
+        clearTimer.setRepeats(false);
+
+        // 8. Update the Copy Button Logic
+        copyBtn.addActionListener(e -> {
+            String selected = passwordList.getSelectedValue();
+            if (selected != null) {
+                copyToClipboard(selected);
+                statusLabel.setText("✓ Password copied to clipboard!");
+                clearTimer.restart(); // Reset the 2-second countdown
+            }
+        });
+
+        // 9. Group Buttons and Status in a bottom panel
+        JPanel bottomContainer = new JPanel(new BorderLayout());
+        bottomContainer.add(buttonPanel, BorderLayout.CENTER);
+        bottomContainer.add(statusLabel, BorderLayout.SOUTH);
+
+        // 10. Final Layout
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(controlPanel, BorderLayout.NORTH);
         mainPanel.add(new JScrollPane(passwordList), BorderLayout.CENTER);
+        mainPanel.add(bottomContainer, BorderLayout.SOUTH);
 
-        Object[] options = {"Copy Selected", "Refresh", "Exit"};
-
-        while (true) {
-            int result = JOptionPane.showOptionDialog(null, mainPanel, "Password Generator",
-                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
-                    null, options, options[0]);
-
-            if (result == JOptionPane.YES_OPTION) {
-                if (passwordList.getSelectedValue() != null) {
-                    copyToClipboard(passwordList.getSelectedValue());
-                    break;
-                }
-            } else if (result == JOptionPane.NO_OPTION) {
-                refreshList(listModel);
-            } else {
-                break;
-            }
-        }
+        frame.add(mainPanel);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
-
     private static void refreshList(DefaultListModel<String> model) {
         model.clear();
         for (int i = 0; i < 7; i++) {
@@ -96,7 +128,7 @@ public class PassGen {
     }
 
     // (Dictionary loading and Clipboard methods remain the same as previous)
-    private static void loadDictionary() throws Exception {
+    public static void loadDictionary() throws Exception {
         // 1. Get the resource reference first
         InputStream is = PassGen.class.getResourceAsStream("/words.txt");
 

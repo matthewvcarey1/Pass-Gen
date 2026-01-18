@@ -6,13 +6,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PassGenTest {
 
-
     @BeforeAll
+    static void setup() throws Exception {
+        // Only load the data needed for logic tests
+        // Do NOT call PassGen.main()
+        PassGen.loadDictionary();
+    }
+
+    /* @BeforeAll
     static void setup() {
         // Ensure the dictionary is loaded before any tests run
         // This validates that your words.txt is actually in the resources folder
         PassGen.main(new String[]{"--test-mode"});
-    }
+    } */
 
     @Test
     @DisplayName("Verify generated password structure (3 words, 2 hyphens)")
