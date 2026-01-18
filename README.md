@@ -3,7 +3,7 @@
 ![screen shot](passgen.png "Running on Windows")
 
 
-The file src/main/resources/word.txt has been generated from linux /usr/share/dict/words like this:
+The file src/main/resources/words.txt has been generated from linux /usr/share/dict/words like this:
 
     grep -E '^[a-z|A-Z]{4,6}$' /usr/share/dict/words > src/main/resources/words.txt
 
