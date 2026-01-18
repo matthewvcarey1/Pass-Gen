@@ -11,6 +11,8 @@ Licence GNU Public Licence 3 https://www.gnu.org/licenses/gpl-3.0.en.html
 
 This is a minimal Intellij Maven project
 
+To build you need to have Maven installed and Java JDK version 21 or later.
+
 To build:
 
     mvn clean package
