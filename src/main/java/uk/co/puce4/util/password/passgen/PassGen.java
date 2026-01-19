@@ -1,4 +1,5 @@
 package uk.co.puce4.util.password.passgen;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
@@ -12,9 +13,21 @@ import java.util.stream.IntStream;
 public class PassGen {
     static List<String> cachedWords = null;
     private static final SecureRandom RAND = new SecureRandom();
-    private static int currentWordCount = 3;
     private static boolean includeNumber = false;
     private static final int WORDS_IN_FRAME = 7;
+    private static final int TWO_SECONDS = 2000;
+    private static final int MIN_WORDS = 2;
+    private static final int MAX_WORDS = 6;
+    private static final int DEFAULT_WORDS = 3;
+    private static final Color DARK_GREEN = new Color(0, 128, 0);
+    private static final int MIN_WORD_LENGTH = 4;
+    private static final int MAX_WORD_LENGTH = 6;
+    private static final int PASSWORD_LIST_FONT_SIZE = 14;
+    private static final int SINGLE_DIGIT_RANDOM_LIMIT = 10;
+    private static final int STATUS_LABEL_HORIZONTAL_BORDER = 5;
+    private static final int STATUS_LABEL_VERTICAL_BORDER = 10;
+    private static final int CONTROL_PANEL_BORDER = 10;
+    private static int currentWordCount = DEFAULT_WORDS;
 
     public static void main(String[] args) {
         // Run UI on the Event Dispatch Thread (standard Swing practice)
@@ -46,10 +59,14 @@ public class PassGen {
         DefaultListModel<String> listModel = new DefaultListModel<>();
         refreshList(listModel);
         JList<String> passwordList = new JList<>(listModel);
-        passwordList.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        passwordList.setFont(
+                new Font("Monospaced",
+                        Font.PLAIN, PASSWORD_LIST_FONT_SIZE
+                )
+        );
 
         // Initialise the Slider (The Control Components)
-        JSlider wordSlider = new JSlider(2, 6, 3);
+        JSlider wordSlider = new JSlider(MIN_WORDS, MAX_WORDS, DEFAULT_WORDS);
         wordSlider.setMajorTickSpacing(1);
         wordSlider.setPaintTicks(true);
         wordSlider.setPaintLabels(true);
@@ -71,7 +88,12 @@ public class PassGen {
         controlPanel.add(new JLabel("Number of Words:"));
         controlPanel.add(wordSlider);
         controlPanel.add(numBox);
-        controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        controlPanel.setBorder(BorderFactory.createEmptyBorder(
+                CONTROL_PANEL_BORDER,
+                CONTROL_PANEL_BORDER,
+                CONTROL_PANEL_BORDER,
+                CONTROL_PANEL_BORDER
+        ));
 
         //  Buttons Panel (Standard GUI buttons)
         JPanel buttonPanel = new JPanel();
@@ -90,11 +112,16 @@ public class PassGen {
 
         // Create the Status Label
         JLabel statusLabel = new JLabel(" "); // Space keeps the height consistent
-        statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        statusLabel.setForeground(new Color(0, 128, 0)); // Dark green for success
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(
+                STATUS_LABEL_HORIZONTAL_BORDER,
+                STATUS_LABEL_VERTICAL_BORDER,
+                STATUS_LABEL_HORIZONTAL_BORDER,
+                STATUS_LABEL_VERTICAL_BORDER
+        ));
+        statusLabel.setForeground(DARK_GREEN); // Dark green for success
 
         // 7. Setup a Timer to clear the status after 2 seconds
-        Timer clearTimer = new Timer(2000, e -> statusLabel.setText(" "));
+        Timer clearTimer = new Timer(TWO_SECONDS, e -> statusLabel.setText(" "));
         clearTimer.setRepeats(false);
 
         // Update the Copy Button Logic
@@ -123,6 +150,7 @@ public class PassGen {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
+
     private static void refreshList(DefaultListModel<String> model) {
         model.clear();
         for (int i = 0; i < WORDS_IN_FRAME; i++) {
@@ -135,7 +163,7 @@ public class PassGen {
                 .mapToObj(i -> cachedWords.get(RAND.nextInt(cachedWords.size())))
                 .collect(Collectors.joining("-")); //.toLowerCase();
 
-        return includeNumber ? base + "-" + (RAND.nextInt(10)) : base;
+        return includeNumber ? base + "-" + (RAND.nextInt(SINGLE_DIGIT_RANDOM_LIMIT)) : base;
     }
 
     // (Dictionary loading and Clipboard methods remain the same as previous)
@@ -155,7 +183,7 @@ public class PassGen {
             cachedWords = reader.lines()
                     .map(String::trim)
                     .filter(w -> !w.isEmpty())
-                    .filter(w -> w.length() >= 4 && w.length() <= 6)
+                    .filter(w -> w.length() >= MIN_WORD_LENGTH && w.length() <= MAX_WORD_LENGTH)
                     .filter(w -> w.matches("^[a-z|A-Z]+$"))
                     .collect(Collectors.toList());
         }
