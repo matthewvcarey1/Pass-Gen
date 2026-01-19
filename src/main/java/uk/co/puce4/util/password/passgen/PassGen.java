@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.*;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +31,16 @@ public class PassGen {
     private static void createAndShowGUI() {
         JFrame frame = new JFrame("Password Generator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        URL iconURL = PassGen.class.getResource("/security-high.png");
+
+        if (iconURL != null) {
+            ImageIcon icon = new ImageIcon(iconURL);
+            // 2. Set the icon image
+            frame.setIconImage(icon.getImage());
+        } else {
+            System.err.println("Could not find the icon file!");
+        }
 
         // 1. Setup the List and Model
         DefaultListModel<String> listModel = new DefaultListModel<>();
