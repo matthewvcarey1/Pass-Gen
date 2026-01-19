@@ -14,6 +14,7 @@ public class PassGen {
     private static final SecureRandom RAND = new SecureRandom();
     private static int currentWordCount = 3;
     private static boolean includeNumber = false;
+    private static final int WORDS_IN_FRAME = 7;
 
     public static void main(String[] args) {
         // Run UI on the Event Dispatch Thread (standard Swing practice)
@@ -32,23 +33,22 @@ public class PassGen {
         JFrame frame = new JFrame("Password Generator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        // Set the program icon for MS Windows
         URL iconURL = PassGen.class.getResource("/security-high.png");
-
         if (iconURL != null) {
             ImageIcon icon = new ImageIcon(iconURL);
-            // 2. Set the icon image
             frame.setIconImage(icon.getImage());
         } else {
             System.err.println("Could not find the icon file!");
         }
 
-        // 1. Setup the List and Model
+        // Setup the List and Model
         DefaultListModel<String> listModel = new DefaultListModel<>();
         refreshList(listModel);
         JList<String> passwordList = new JList<>(listModel);
         passwordList.setFont(new Font("Monospaced", Font.PLAIN, 14));
 
-        // 2. Initialise the Slider (The Control Components)
+        // Initialise the Slider (The Control Components)
         JSlider wordSlider = new JSlider(2, 6, 3);
         wordSlider.setMajorTickSpacing(1);
         wordSlider.setPaintTicks(true);
@@ -58,14 +58,14 @@ public class PassGen {
             refreshList(listModel);
         });
 
-        // 3. Initialise the Checkbox
+        // Initialise the Checkbox
         JCheckBox numBox = new JCheckBox("Append random number (0-9)");
         numBox.addActionListener(e -> {
             includeNumber = numBox.isSelected();
             refreshList(listModel);
         });
 
-        // 4. Build the controlPanel (This was missing in the snippet!)
+        //  Build the controlPanel (This was missing in the snippet!)
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
         controlPanel.add(new JLabel("Number of Words:"));
@@ -73,7 +73,7 @@ public class PassGen {
         controlPanel.add(numBox);
         controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // 5. Buttons Panel (Standard GUI buttons)
+        //  Buttons Panel (Standard GUI buttons)
         JPanel buttonPanel = new JPanel();
         JButton copyBtn = new JButton("Copy Selected");
         JButton refreshBtn = new JButton("Refresh");
@@ -88,7 +88,7 @@ public class PassGen {
         buttonPanel.add(copyBtn);
         buttonPanel.add(refreshBtn);
 
-        // 6. Create the Status Label
+        // Create the Status Label
         JLabel statusLabel = new JLabel(" "); // Space keeps the height consistent
         statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         statusLabel.setForeground(new Color(0, 128, 0)); // Dark green for success
@@ -97,7 +97,7 @@ public class PassGen {
         Timer clearTimer = new Timer(2000, e -> statusLabel.setText(" "));
         clearTimer.setRepeats(false);
 
-        // 8. Update the Copy Button Logic
+        // Update the Copy Button Logic
         copyBtn.addActionListener(e -> {
             String selected = passwordList.getSelectedValue();
             if (selected != null) {
@@ -107,12 +107,12 @@ public class PassGen {
             }
         });
 
-        // 9. Group Buttons and Status in a bottom panel
+        // Group Buttons and Status in a bottom panel
         JPanel bottomContainer = new JPanel(new BorderLayout());
         bottomContainer.add(buttonPanel, BorderLayout.CENTER);
         bottomContainer.add(statusLabel, BorderLayout.SOUTH);
 
-        // 10. Final Layout
+        // Final Layout
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(controlPanel, BorderLayout.NORTH);
         mainPanel.add(new JScrollPane(passwordList), BorderLayout.CENTER);
@@ -125,7 +125,7 @@ public class PassGen {
     }
     private static void refreshList(DefaultListModel<String> model) {
         model.clear();
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < WORDS_IN_FRAME; i++) {
             model.addElement(generatePassword(currentWordCount));
         }
     }
