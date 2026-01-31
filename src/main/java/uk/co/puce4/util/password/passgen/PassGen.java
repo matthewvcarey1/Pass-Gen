@@ -23,7 +23,7 @@ public class PassGen {
     private static final int MIN_WORD_LENGTH = 4;
     private static final int MAX_WORD_LENGTH = 6;
     private static final int PASSWORD_LIST_FONT_SIZE = 14;
-    private static final int SINGLE_DIGIT_RANDOM_LIMIT = 10;
+    private static final int DOUBLE_DIGIT_RANDOM_LIMIT = 100;
     private static final int STATUS_LABEL_HORIZONTAL_BORDER = 5;
     private static final int STATUS_LABEL_VERTICAL_BORDER = 10;
     private static final int CONTROL_PANEL_BORDER = 10;
@@ -59,11 +59,11 @@ public class PassGen {
         DefaultListModel<String> listModel = new DefaultListModel<>();
         refreshList(listModel);
         JList<String> passwordList = new JList<>(listModel);
-        passwordList.setFont(
-                new Font("Monospaced",
-                        Font.PLAIN, PASSWORD_LIST_FONT_SIZE
-                )
-        );
+        passwordList.setFont(new Font("Monospaced", Font.PLAIN, PASSWORD_LIST_FONT_SIZE));
+        passwordList.setVisibleRowCount(WORDS_IN_FRAME);
+
+        JScrollPane listScrollPane = new JScrollPane(passwordList);
+        listScrollPane.setPreferredSize(new Dimension(520, 240));
 
         // Initialise the Slider (The Control Components)
         JSlider wordSlider = new JSlider(MIN_WORDS, MAX_WORDS, DEFAULT_WORDS);
@@ -76,77 +76,86 @@ public class PassGen {
         });
 
         // Initialise the Checkbox
-        JCheckBox numBox = new JCheckBox("Append random number (0-9)");
+        JCheckBox numBox = new JCheckBox("Append random number (0-99)");
         numBox.addActionListener(e -> {
             includeNumber = numBox.isSelected();
             refreshList(listModel);
         });
 
-        //  Build the controlPanel (This was missing in the snippet!)
-        JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-        controlPanel.add(new JLabel("Number of Words:"));
-        controlPanel.add(wordSlider);
-        controlPanel.add(numBox);
-        controlPanel.setBorder(BorderFactory.createEmptyBorder(
-                CONTROL_PANEL_BORDER,
-                CONTROL_PANEL_BORDER,
-                CONTROL_PANEL_BORDER,
-                CONTROL_PANEL_BORDER
+        // Build a nicer "form-like" control panel
+        JPanel controlPanel = new JPanel(new GridBagLayout());
+        controlPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Options"),
+                BorderFactory.createEmptyBorder(
+                        CONTROL_PANEL_BORDER,
+                        CONTROL_PANEL_BORDER,
+                        CONTROL_PANEL_BORDER,
+                        CONTROL_PANEL_BORDER
+                )
         ));
 
-        //  Buttons Panel (Standard GUI buttons)
-        JPanel buttonPanel = new JPanel();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.insets = new Insets(4, 0, 4, 0);
+
+        controlPanel.add(new JLabel("Number of words:"), gbc);
+
+        gbc.gridy++;
+        controlPanel.add(wordSlider, gbc);
+
+        gbc.gridy++;
+        controlPanel.add(numBox, gbc);
+
+        // Buttons Panel (right-aligned looks more "native")
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         JButton copyBtn = new JButton("Copy Selected");
         JButton refreshBtn = new JButton("Refresh");
-
-        copyBtn.addActionListener(e -> {
-            if (passwordList.getSelectedValue() != null) {
-                copyToClipboard(passwordList.getSelectedValue());
-            }
-        });
-        refreshBtn.addActionListener(e -> refreshList(listModel));
-
-        buttonPanel.add(copyBtn);
         buttonPanel.add(refreshBtn);
+        buttonPanel.add(copyBtn);
 
-        // Create the Status Label
-        JLabel statusLabel = new JLabel(" "); // Space keeps the height consistent
+        // Status label (left side, like a status bar)
+        JLabel statusLabel = new JLabel(" ");
         statusLabel.setBorder(BorderFactory.createEmptyBorder(
-                STATUS_LABEL_HORIZONTAL_BORDER,
                 STATUS_LABEL_VERTICAL_BORDER,
                 STATUS_LABEL_HORIZONTAL_BORDER,
-                STATUS_LABEL_VERTICAL_BORDER
+                STATUS_LABEL_VERTICAL_BORDER,
+                STATUS_LABEL_HORIZONTAL_BORDER
         ));
-        statusLabel.setForeground(DARK_GREEN); // Dark green for success
+        statusLabel.setForeground(DARK_GREEN);
 
-        // 7. Setup a Timer to clear the status after 2 seconds
         Timer clearTimer = new Timer(TWO_SECONDS, e -> statusLabel.setText(" "));
         clearTimer.setRepeats(false);
 
-        // Update the Copy Button Logic
         copyBtn.addActionListener(e -> {
             String selected = passwordList.getSelectedValue();
             if (selected != null) {
                 copyToClipboard(selected);
                 statusLabel.setText("✓ Password copied to clipboard!");
-                clearTimer.restart(); // Reset the 2-second countdown
+                clearTimer.restart();
             }
         });
+        refreshBtn.addActionListener(e -> refreshList(listModel));
 
-        // Group Buttons and Status in a bottom panel
-        JPanel bottomContainer = new JPanel(new BorderLayout());
-        bottomContainer.add(buttonPanel, BorderLayout.CENTER);
-        bottomContainer.add(statusLabel, BorderLayout.SOUTH);
+        // Bottom "status bar": status on the left, buttons on the right
+        JPanel bottomBar = new JPanel(new BorderLayout());
+        bottomBar.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        bottomBar.add(statusLabel, BorderLayout.CENTER);
+        bottomBar.add(buttonPanel, BorderLayout.EAST);
 
         // Final Layout
-        JPanel mainPanel = new JPanel(new BorderLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         mainPanel.add(controlPanel, BorderLayout.NORTH);
-        mainPanel.add(new JScrollPane(passwordList), BorderLayout.CENTER);
-        mainPanel.add(bottomContainer, BorderLayout.SOUTH);
+        mainPanel.add(listScrollPane, BorderLayout.CENTER);
+        mainPanel.add(bottomBar, BorderLayout.SOUTH);
 
-        frame.add(mainPanel);
+        frame.setContentPane(mainPanel);
         frame.pack();
+        frame.setMinimumSize(frame.getSize());
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
@@ -163,7 +172,7 @@ public class PassGen {
                 .mapToObj(i -> cachedWords.get(RAND.nextInt(cachedWords.size())))
                 .collect(Collectors.joining("-")); //.toLowerCase();
 
-        return includeNumber ? base + "-" + (RAND.nextInt(SINGLE_DIGIT_RANDOM_LIMIT)) : base;
+        return includeNumber ? base + "-" + (RAND.nextInt(DOUBLE_DIGIT_RANDOM_LIMIT)) : base;
     }
 
     // (Dictionary loading and Clipboard methods remain the same as previous)
