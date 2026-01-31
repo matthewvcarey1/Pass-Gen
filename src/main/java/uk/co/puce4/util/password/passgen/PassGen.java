@@ -7,6 +7,8 @@ import java.io.*;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -14,7 +16,7 @@ public class PassGen {
     static List<String> cachedWords = null;
     private static final SecureRandom RAND = new SecureRandom();
     private static boolean includeNumber = false;
-    private static final int WORDS_IN_FRAME = 7;
+    private static final int WORDS_IN_FRAME = 10;
     private static final int TWO_SECONDS = 2000;
     private static final int MIN_WORDS = 2;
     private static final int MAX_WORDS = 6;
@@ -29,17 +31,44 @@ public class PassGen {
     private static final int CONTROL_PANEL_BORDER = 10;
     private static int currentWordCount = DEFAULT_WORDS;
 
+    private static final Logger LOG = Logger.getLogger(PassGen.class.getName());
+
     public static void main(String[] args) {
-        // Run UI on the Event Dispatch Thread (standard Swing practice)
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            LOG.log(Level.SEVERE, "Uncaught exception on thread: " + thread.getName());
+            SwingUtilities.invokeLater(() -> showFatalErrorDialog(
+                    "Something went wrong unexpectedly.\n\n" +
+                            "Details: " + throwable.getClass().getSimpleName() + ": " + safeMessage(throwable)
+            ));
+        });
+
         SwingUtilities.invokeLater(() -> {
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 loadDictionary();
                 createAndShowGUI();
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.log(Level.SEVERE, "Application failed to start", e);
+                showFatalErrorDialog(
+                        "The application failed to start.\n\n" +
+                                "Details: " + e.getClass().getSimpleName() + ": " + safeMessage(e)
+                );
             }
         });
+    }
+
+    private static String safeMessage(Throwable t) {
+        String msg = t.getMessage();
+        return (msg == null || msg.isBlank()) ? "(no message)" : msg;
+    }
+
+    private static void showFatalErrorDialog(String userMessage) {
+        JOptionPane.showMessageDialog(
+                null,
+                userMessage,
+                "Password Generator - Error",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
 
     private static void createAndShowGUI() {
@@ -55,7 +84,7 @@ public class PassGen {
             System.err.println("Could not find the icon file!");
         }
 
-        // Setup the List and Model
+        // Set up the List and Model
         DefaultListModel<String> listModel = new DefaultListModel<>();
         refreshList(listModel);
         JList<String> passwordList = new JList<>(listModel);
